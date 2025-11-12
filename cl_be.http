@@ -1,0 +1,6 @@
+@cl_be_HostAddress = http://localhost:5029
+
+GET {{cl_be_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
