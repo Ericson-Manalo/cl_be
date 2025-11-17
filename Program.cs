@@ -50,7 +50,7 @@ namespace cl_be
                     ?? throw new InvalidOperationException("Connessione non avvenuta"));
             });
 
-            var app = builder.Build();
+            var app = builder.Build(); 
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
