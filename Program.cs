@@ -42,13 +42,24 @@ namespace cl_be
             });
 
 
-            //Servizio per connettersi al db
+            //Servizio per connettersi al db AdventureWorksLt2019
             builder.Services.AddDbContext<AdventureWorksLt2019Context>(options =>
             {
                 options.UseSqlServer(
                     builder.Configuration.GetConnectionString("AdventureWorksLT2019")
                     ?? throw new InvalidOperationException("Connessione non avvenuta"));
             });
+
+
+            //Servizio per connettersi al db ClcredsDb
+
+            builder.Services.AddDbContext<ClcredsDbContext>(options =>
+            {
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("CLCredsDb")
+                    ?? throw new InvalidOperationException("Connessione non avvenuta"));
+            });
+
 
             var app = builder.Build(); 
 
