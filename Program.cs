@@ -50,6 +50,15 @@ namespace cl_be
                     ?? throw new InvalidOperationException("Connessione non avvenuta"));
             });
 
+            //Servizio per connettersi al db password
+
+            builder.Services.AddDbContext<ClcredsDbContext>(options =>
+            {
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("CLCredsDb")
+                    ?? throw new InvalidOperationException("Connessione al secondo DB non avvenuta"));
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
