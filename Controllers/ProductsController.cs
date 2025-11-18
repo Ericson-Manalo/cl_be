@@ -66,19 +66,35 @@ namespace cl_be.Controllers
         }
 
 
-        // GET: api/Products/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(int id)
+        public async Task<ActionResult<ProductDetailDto>> GetProduct(int id)
         {
-            var product = await _context.Products.FindAsync(id);
+            var productDto = await _context.Products
+                .Where(p => p.ProductId == id)
+                .Select(p => new ProductDetailDto
+                {
+                    ProductId = p.ProductId,
+                    Name = p.Name,
+                    Color = p.Color,
+                    StandardCost = p.StandardCost,
+                    ListPrice = p.ListPrice,
+                    ProductCategoryId = p.ProductCategoryId,
+                    CategoryName = p.ProductCategory != null ? p.ProductCategory.Name : "No category",
+                    ThumbNailPhoto = p.ThumbNailPhoto,
+                    Size = p.Size,
+                    Weight = p.Weight,
+                    ProductNumber = p.ProductNumber
+                })
+                .FirstOrDefaultAsync();
 
-            if (product == null)
+            if (productDto == null)
             {
                 return NotFound();
             }
 
-            return product;
+            return Ok( productDto);
         }
+
 
         // PUT: api/Products/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
