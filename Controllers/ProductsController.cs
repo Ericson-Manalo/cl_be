@@ -92,7 +92,7 @@ namespace cl_be.Controllers
                 return NotFound();
             }
 
-            return Ok( productDto);
+            return Ok(productDto);
         }
 
 
