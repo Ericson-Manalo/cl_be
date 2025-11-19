@@ -34,5 +34,8 @@
 
         public string ProductNumber { get; set; } = null!;
 
+
+        //public List<Review> Reviews { get; set; } = new();
+
     }
 }

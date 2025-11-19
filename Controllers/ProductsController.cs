@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using cl_be.Models;
 using cl_be.Models.Pagination;
@@ -17,8 +12,14 @@ namespace cl_be.Controllers
     {
         private readonly AdventureWorksLt2019Context _context;
 
-        public ProductsController(AdventureWorksLt2019Context context)
+        //private readonly ReviewService _reviewService;
+
+        public ProductsController(
+            AdventureWorksLt2019Context context
+            //ReviewService reviewService
+            )
         {
+            //_reviewService= reviewService;
             _context = context;
         }
 
@@ -83,7 +84,8 @@ namespace cl_be.Controllers
                     ThumbNailPhoto = p.ThumbNailPhoto,
                     Size = p.Size,
                     Weight = p.Weight,
-                    ProductNumber = p.ProductNumber
+                    ProductNumber = p.ProductNumber,
+                    
                 })
                 .FirstOrDefaultAsync();
 
@@ -91,6 +93,9 @@ namespace cl_be.Controllers
             {
                 return NotFound();
             }
+
+            // ⭐ RECUPERO REVIEW DA MONGODB
+            //productDto.Reviews = await _reviewService.GetReviewsForProduct(id);
 
             return Ok(productDto);
         }
@@ -211,7 +216,7 @@ namespace cl_be.Controllers
                 StandardCost = product.StandardCost,
                 ListPrice = product.ListPrice,
                 ProductCategoryId = product.ProductCategoryId,
-                CategoryName = dto.ProductCategoryId.HasValue ? (await _context.ProductCategories.FindAsync(dto.ProductCategoryId)).Name : "No category",
+                CategoryName = dto.ProductCategoryId.HasValue ? (await _context!.ProductCategories!.FindAsync(dto.ProductCategoryId))!.Name : "No category",
                 ThumbNailPhoto = product.ThumbNailPhoto,
                 Size = product.Size,
                 Weight = product.Weight,
