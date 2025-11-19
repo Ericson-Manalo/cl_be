@@ -1,4 +1,4 @@
-﻿namespace cl_be.Models.Dto
+﻿namespace cl_be.Models.Dto.ProductDto
 {
     public class ProductCardDto
     {

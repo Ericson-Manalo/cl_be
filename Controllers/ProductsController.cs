@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using cl_be.Models;
-using cl_be.Models.Dto;
 using cl_be.Models.Pagination;
+using cl_be.Models.Dto.ProductDto;
 
 namespace cl_be.Controllers
 {
@@ -128,14 +128,63 @@ namespace cl_be.Controllers
         }
 
         // POST: api/Products
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct(Product product)
+        public async Task<ActionResult<ProductDetailDto>> PostProduct([FromBody] ProductCreateDto dto)
         {
+            if (dto.ProductCategoryId.HasValue && !await _context.ProductCategories.AnyAsync(c => c.ProductCategoryId == dto.ProductCategoryId))
+            {
+                return BadRequest("Categoria prodotto non valida.");
+            }
+
+            // Validazione FK ProductModelId
+            if (dto.ProductModelId.HasValue && !await _context.ProductModels.AnyAsync(m => m.ProductModelId == dto.ProductModelId))
+            {
+                return BadRequest("Modello prodotto non valido.");
+            }
+
+            var product = new Product
+            {
+                Name = dto.Name,
+                ProductNumber = dto.ProductNumber,
+                StandardCost = dto.StandardCost,
+                ListPrice = dto.ListPrice,
+                ProductCategoryId = dto.ProductCategoryId,
+                ProductModelId = dto.ProductModelId,
+                Color = dto.Color,
+                Size = dto.Size,
+                Weight = dto.Weight,
+                //ThumbNailPhoto = dto.ThumbNailPhoto,
+                ThumbnailPhotoFileName = dto.ThumbnailPhotoFileName,
+                SellStartDate = dto.SellStartDate,
+                SellEndDate = dto.SellEndDate,
+                DiscontinuedDate = dto.DiscontinuedDate,
+                ModifiedDate = DateTime.UtcNow,
+                Rowguid = Guid.NewGuid()
+            };
+
+            // Aggiungi e salva
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetProduct", new { id = product.ProductId }, product);
+            
+            var result = new ProductDetailDto
+            {
+                ProductId = product.ProductId,
+                Name = product.Name,
+                Color = product.Color,
+                StandardCost = product.StandardCost,
+                ListPrice = product.ListPrice,
+                ProductCategoryId = product.ProductCategoryId,
+                CategoryName = dto.ProductCategoryId.HasValue ? (await _context.ProductCategories.FindAsync(dto.ProductCategoryId))?.Name : "No category",
+                ThumbNailPhoto = product.ThumbNailPhoto,
+                Size = product.Size,
+                Weight = product.Weight,
+                ProductNumber = product.ProductNumber
+
+
+            };
+
+            return CreatedAtAction(nameof(GetProduct), new { id = product.ProductId }, result);
         }
 
         // DELETE: api/Products/5
