@@ -35,7 +35,13 @@
         public string ProductNumber { get; set; } = null!;
 
 
-        public List<Review> Reviews { get; set; } = new();
+        public List<Review> Reviews { get; set; } = [];
+
+
+
+       
+        public Dictionary<string, string> Descriptions { get; set; } = [];
+        //public string Culture { get; set; } = "en-US";
 
     }
 }

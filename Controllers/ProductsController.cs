@@ -1,4 +1,5 @@
 ﻿using cl_be.Models;
+using cl_be.Models.Dto.CategoryDto;
 using cl_be.Models.Dto.ProductDto;
 using cl_be.Models.Pagination;
 using cl_be.Models.Services;
@@ -30,17 +31,32 @@ namespace cl_be.Controllers
         {
             return await _context.Products.ToListAsync();
         }
-
         [HttpGet("paged")]
-        public async Task<Page<ProductCardDto>> GetPagedProducts(int pageNumber = 1, int pageSize = 20)
+        public async Task<Page<ProductCardDto>> GetPagedProducts(
+            int pageNumber = 1,
+            int pageSize = 20,
+            int? categoryId = null) 
         {
-            var totalItems = await _context.Products.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-            pageNumber = Math.Clamp(pageNumber, 1, totalPages);
-
-           List<ProductCardDto> items = await _context.Products
+            var query = _context.Products
                 .AsNoTracking()
                 .Include(p => p.ProductCategory)
+                .AsQueryable();
+
+            if (categoryId.HasValue)
+            {
+                query = query.Where(p => p.ProductCategoryId == categoryId.Value);
+            }
+
+         
+            var totalItems = await query.CountAsync();
+            var totalPages = totalItems > 0
+                ? (int)Math.Ceiling(totalItems / (double)pageSize)
+                : 1;
+
+            pageNumber = Math.Clamp(pageNumber, 1, totalPages);
+
+            // items paginati con filtro
+            List<ProductCardDto> items = await query
                 .OrderBy(p => p.ProductId)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -48,11 +64,11 @@ namespace cl_be.Controllers
                 {
                     ProductId = p.ProductId,
                     Name = p.Name,
-                    Color = p.Color,
-                    StandardCost = p.StandardCost,
                     ListPrice = p.ListPrice,
                     ProductCategoryId = p.ProductCategoryId,
-                    CategoryName = p.ProductCategory != null ? p.ProductCategory.Name : "No category",
+                    CategoryName = p.ProductCategory != null
+                        ? p.ProductCategory.Name
+                        : "No category",
                     ThumbNailPhoto = p.ThumbNailPhoto
                 })
                 .ToListAsync();
@@ -67,39 +83,66 @@ namespace cl_be.Controllers
             };
         }
 
+        [HttpGet("categories")]
+        [ProducesResponseType(typeof(List<CategoryDto>), 200)]
+        public async Task<ActionResult<List<CategoryDto>>> GetCategories()
+        {
+            var categories = await _context.ProductCategories
+                .AsNoTracking()
+                .OrderBy(c => c.Products.Count())
+                .Select(c => new CategoryDto
+                {
+                    CategoryId = c.ProductCategoryId,
+                    Name = c.Name,
+                    ProductCount = c.Products.Count()
+                })
+                .ToListAsync();
+
+            return Ok(categories);
+        }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDetailDto>> GetProduct(int id)
         {
-            var productDto = await _context.Products
+            var product = await _context.Products
                 .Where(p => p.ProductId == id)
-                .Select(p => new ProductDetailDto
-                {
-                    ProductId = p.ProductId,
-                    Name = p.Name,
-                    Color = p.Color,
-                    StandardCost = p.StandardCost,
-                    ListPrice = p.ListPrice,
-                    ProductCategoryId = p.ProductCategoryId,
-                    CategoryName = p.ProductCategory != null ? p.ProductCategory.Name : "No category",
-                    ThumbNailPhoto = p.ThumbNailPhoto,
-                    Size = p.Size,
-                    Weight = p.Weight,
-                    ProductNumber = p.ProductNumber,
-                    
-                })
+                .Include(p => p.ProductCategory)
+                .Include(p => p.ProductModel)
+                    .ThenInclude(pm => pm!.ProductModelProductDescriptions)
+                        .ThenInclude(pmpd => pmpd.ProductDescription)
                 .FirstOrDefaultAsync();
 
-            if (productDto == null)
+            if (product == null)
             {
-                return NotFound();
+                return NotFound(new { message = $"Product with ID {id} not found" });
             }
 
-            // ⭐ RECUPERO REVIEW DA MONGODB
-            productDto.Reviews = await _reviewService.GetReviewsForProduct(id);
+            var productDto = new ProductDetailDto
+            {
+                ProductId = product.ProductId,
+                Name = product.Name,
+                Color = product.Color,
+                StandardCost = product.StandardCost,
+                ListPrice = product.ListPrice,
+                ProductCategoryId = product.ProductCategoryId,
+                CategoryName = product.ProductCategory?.Name ?? "No category",
+                ThumbNailPhoto = product.ThumbNailPhoto,
+                Size = product.Size,
+                Weight = product.Weight,
+                ProductNumber = product.ProductNumber,
+
+                Descriptions = product.ProductModel?.ProductModelProductDescriptions
+                    .ToDictionary(
+                        pmpd => pmpd.Culture.Trim(),
+                        pmpd => pmpd.ProductDescription.Description
+                    ) ?? new Dictionary<string, string>(),
+
+                Reviews = await _reviewService.GetReviewsForProduct(id)
+            };
 
             return Ok(productDto);
         }
+
 
 
         // PUT: api/Products/5

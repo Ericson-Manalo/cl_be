@@ -8,9 +8,9 @@
         public string Name { get; set; } = null!;
 
 
-        public string? Color { get; set; }
+        //public string? Color { get; set; }
 
-        public decimal StandardCost { get; set; }
+        //public decimal StandardCost { get; set; }
 
 
         public decimal ListPrice { get; set; }
