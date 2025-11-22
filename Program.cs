@@ -1,7 +1,10 @@
 
 using cl_be.Models;
+using cl_be.Models.Auth;
 using cl_be.Models.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
 
 namespace cl_be
@@ -42,6 +45,39 @@ namespace cl_be
                 });
             });
 
+            // Servizio per validare il Jwt generato
+            JwtSettings jwtSettings = new JwtSettings();
+            jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()!;
+            builder.Services.AddSingleton(jwtSettings);
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(opts =>
+                {
+                    var key = System.Text.Encoding.ASCII.GetBytes(jwtSettings.SecretKey!);
+                    opts.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings.Issuer,
+                        ValidAudience = jwtSettings.Audience,
+                        ClockSkew = TimeSpan.FromSeconds(3),
+                        IssuerSigningKey = new SymmetricSecurityKey(key)
+                    };
+                });
+
+            builder.Services.AddAuthorization(opt =>
+            {
+                opt.AddPolicy("AdminPolicy", policy =>
+                {
+                    policy.RequireRole("Admin");
+                });
+
+                opt.AddPolicy("UserPolicy", policy =>
+                {
+                    policy.RequireRole("Admin", "User");
+                });
+            });
 
             //Servizio per connettersi al db AdventureWorksLt2019
             builder.Services.AddDbContext<AdventureWorksLt2019Context>(options =>
@@ -60,7 +96,6 @@ namespace cl_be
                     builder.Configuration.GetConnectionString("CLCredsDb")
                     ?? throw new InvalidOperationException("Connessione non avvenuta"));
             });
-
 
             //Servizio per connettersi al DB ReviewMDB MONGODB
             // Ottieni la sezione dal configuration
