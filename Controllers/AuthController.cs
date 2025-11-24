@@ -78,7 +78,7 @@ namespace cl_be.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok("Password has been changed successfully");
+            return Ok(new { message = "Password has been changed successfully" });
         }
 
         private string GenerateJwt(LoginCredentials loginCredentials, string role)
