@@ -77,6 +77,16 @@ namespace cl_be.Controllers
             return Ok(new { message = "Password has been changed successfully" });
         }
 
+        // Creazione Logica della Registrazione utente/customer
+
+
+
+        [HttpPost("Register")]
+        public async Task<IActionResult> register(RegisterCredentials registerCredentials)
+        {
+
+        }
+
         private string GenerateJwt(LoginCredentials loginCredentials, string role)
         {
             var secretKey = _jwtSettings.SecretKey;
