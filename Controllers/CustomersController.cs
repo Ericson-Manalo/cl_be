@@ -1,11 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using cl_be.Models;
+using cl_be.Models.Dto.AddressDto;
+using cl_be.Models.Dto.CustomerDto;
+using cl_be.Models.Dto.OrderDto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using cl_be.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace cl_be.Controllers
 {
@@ -20,26 +23,59 @@ namespace cl_be.Controllers
             _context = context;
         }
 
-        // GET: api/Customers
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
+        // GET api/customer/1
+        [HttpGet("{customerId}")]
+        public async Task<ActionResult<CustomerProfileDto>> GetCustomerProfile(int customerId)
         {
-            return await _context.Customers.ToListAsync();
-        }
-
-        // GET: api/Customers/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Customer>> GetCustomer(int id)
-        {
-            var customer = await _context.Customers.FindAsync(id);
+            // Recupera il customer
+            var customer = await _context.Customers
+                .FirstOrDefaultAsync(c => c.CustomerId == customerId);
 
             if (customer == null)
-            {
-                return NotFound();
-            }
+                return NotFound("Customer not found");
 
-            return customer;
+            // Recupera indirizzi light
+            var addresses = await _context.CustomerAddresses
+                .Where(ca => ca.CustomerId == customerId)
+                .Include(ca => ca.Address)
+                .Select(ca => new AddressCustomerDto
+                {
+                    AddressId = ca.Address.AddressId,
+                    AddressLine1 = ca.Address.AddressLine1,
+                    City = ca.Address.City,
+                    PostalCode = ca.Address.PostalCode
+                })
+                .ToListAsync();
+
+            // Recupera ordini light
+            var orders = await _context.SalesOrderHeaders
+                .Where(o => o.CustomerId == customerId)
+                .OrderByDescending(o => o.OrderDate)
+                .Select(o => new OrderCustomerDto
+                {
+                    SalesOrderId = o.SalesOrderId,
+                    SalesOrderNumber = o.SalesOrderNumber!,
+                    OrderDate = o.OrderDate,
+                    TotalDue = o.TotalDue,
+                    Status = o.Status
+                })
+                .ToListAsync();
+
+            // Compila il DTO finale
+            var dto = new CustomerProfileDto
+            {
+                CustomerId = customer.CustomerId,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                EmailAddress = customer.EmailAddress,
+                Phone = customer.Phone,
+                Addresses = addresses,
+                Orders = orders
+            };
+
+            return Ok(dto);
         }
+
 
         // PUT: api/Customers/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
