@@ -2,6 +2,7 @@
 using cl_be.Models.Dto.AddressDto;
 using cl_be.Models.Dto.CustomerDto;
 using cl_be.Models.Dto.OrderDto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,9 +25,18 @@ namespace cl_be.Controllers
         }
 
         // GET api/customer/1
-        [HttpGet("{customerId}")]
-        public async Task<ActionResult<CustomerProfileDto>> GetCustomerProfile(int customerId)
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<ActionResult<CustomerProfileDto>> GetCustomerProfile()
         {
+
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (customerIdClaim == null)
+                return Unauthorized("CustomerId not found in token");
+
+            int customerId = int.Parse(customerIdClaim);
+
             // Recupera il customer
             var customer = await _context.Customers
                 .FirstOrDefaultAsync(c => c.CustomerId == customerId);
@@ -79,65 +89,65 @@ namespace cl_be.Controllers
 
         // PUT: api/Customers/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutCustomer(int id, Customer customer)
-        {
-            if (id != customer.CustomerId)
-            {
-                return BadRequest();
-            }
+        //    [HttpPut("{id}")]
+        //    public async Task<IActionResult> PutCustomer(int id, Customer customer)
+        //    {
+        //        if (id != customer.CustomerId)
+        //        {
+        //            return BadRequest();
+        //        }
 
-            _context.Entry(customer).State = EntityState.Modified;
+        //        _context.Entry(customer).State = EntityState.Modified;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CustomerExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+        //        try
+        //        {
+        //            await _context.SaveChangesAsync();
+        //        }
+        //        catch (DbUpdateConcurrencyException)
+        //        {
+        //            if (!CustomerExists(id))
+        //            {
+        //                return NotFound();
+        //            }
+        //            else
+        //            {
+        //                throw;
+        //            }
+        //        }
 
-            return NoContent();
-        }
+        //        return NoContent();
+        //    }
 
-        // POST: api/Customers
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Customer>> PostCustomer(Customer customer)
-        {
-            _context.Customers.Add(customer);
-            await _context.SaveChangesAsync();
+        //    // POST: api/Customers
+        //    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        //    [HttpPost]
+        //    public async Task<ActionResult<Customer>> PostCustomer(Customer customer)
+        //    {
+        //        _context.Customers.Add(customer);
+        //        await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetCustomer", new { id = customer.CustomerId }, customer);
-        }
+        //        return CreatedAtAction("GetCustomer", new { id = customer.CustomerId }, customer);
+        //    }
 
-        // DELETE: api/Customers/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCustomer(int id)
-        {
-            var customer = await _context.Customers.FindAsync(id);
-            if (customer == null)
-            {
-                return NotFound();
-            }
+        //    // DELETE: api/Customers/5
+        //    [HttpDelete("{id}")]
+        //    public async Task<IActionResult> DeleteCustomer(int id)
+        //    {
+        //        var customer = await _context.Customers.FindAsync(id);
+        //        if (customer == null)
+        //        {
+        //            return NotFound();
+        //        }
 
-            _context.Customers.Remove(customer);
-            await _context.SaveChangesAsync();
+        //        _context.Customers.Remove(customer);
+        //        await _context.SaveChangesAsync();
 
-            return NoContent();
-        }
+        //        return NoContent();
+        //    }
 
-        private bool CustomerExists(int id)
-        {
-            return _context.Customers.Any(e => e.CustomerId == id);
-        }
+        //    private bool CustomerExists(int id)
+        //    {
+        //        return _context.Customers.Any(e => e.CustomerId == id);
+        //    }
     }
 }

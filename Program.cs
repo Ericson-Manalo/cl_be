@@ -128,10 +128,13 @@ namespace cl_be
 
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
+
 
             // Inserisci qui il middleware CORS
             app.UseCors("AllowFrontEnd");
+
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.MapControllers();
 
