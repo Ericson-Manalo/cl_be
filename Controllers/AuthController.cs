@@ -148,7 +148,7 @@ namespace cl_be.Controllers
             });
         }
 
-        private string GenerateJwt(LoginCredentials loginCredentials, string role)
+        private string GenerateJwt(LoginCredentials loginCredentials, int id, string role)
         {
             var secretKey = _jwtSettings.SecretKey;
             var tokenHandler = new JwtSecurityTokenHandler();
