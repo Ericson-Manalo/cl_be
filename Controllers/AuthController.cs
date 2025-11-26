@@ -17,12 +17,14 @@ namespace cl_be.Controllers
     {
 
         private readonly ClcredsDbContext _context;
+        private readonly AdventureWorksLt2019Context _adventureContext;
         private JwtSettings _jwtSettings;
 
-        public AuthController(ClcredsDbContext context, JwtSettings jwtSettings)
+        public AuthController(ClcredsDbContext context, JwtSettings jwtSettings, AdventureWorksLt2019Context adventureContext)
         {
             _context = context;
             _jwtSettings = jwtSettings;
+            _adventureContext = adventureContext;
         }
 
         [HttpPost("Login")]
@@ -78,13 +80,69 @@ namespace cl_be.Controllers
         }
 
         // Creazione Logica della Registrazione utente/customer
-
-
-
         [HttpPost("Register")]
-        public async Task<IActionResult> register(RegisterCredentials registerCredentials)
+        public async Task<IActionResult> Register(RegisterCredentials registerCredentials)
         {
+            // Validazione del data model
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
+            // Controllo se l'email è già nel database
+            var existingCustomer = await _context.UserLogins
+                .FirstOrDefaultAsync(c => c.Email == registerCredentials.Email);
+
+            if (existingCustomer != null)
+                return Conflict(new { message = "Email is already registered" });
+
+            // Salvo il nuovo Customer nel db originale
+            var customer = new Customer
+            {
+                FirstName = registerCredentials.Name,
+                LastName = registerCredentials.Surname,
+                MiddleName = registerCredentials.Middlename,
+                EmailAddress = registerCredentials.Email,
+                Phone = registerCredentials.Phone,
+
+                // I campi hash e salt non possono essere NULL quindi mettiamo dei dummy
+                PasswordHash = "",
+                PasswordSalt = ""
+            };
+
+            _adventureContext.Customers.Add(customer);
+            await _adventureContext.SaveChangesAsync();
+
+            // Salvo i credenziali del nuovo Customer nell'altro db
+            var customerId = customer.CustomerId;
+            var salt = PasswordHelper.GenerateSalt();
+            var hash = PasswordHelper.GenerateHash(registerCredentials.Password, salt);
+
+            var userLogin = new UserLogin
+            {
+                CustomerId = customerId,
+                Email = registerCredentials.Email,
+                PasswordSalt = salt,
+                PasswordHash = hash,
+                AsUpdated = false,
+                Role = 1
+            };
+
+            _context.UserLogins.Add(userLogin);
+            await _context.SaveChangesAsync();
+
+            // Ritorna 201 created (senza salvataggio del password non-hashato)
+            return StatusCode(StatusCodes.Status201Created, new
+            {
+                message = "Customer registered successfully.",
+                customer = new
+                {
+                    customer.CustomerId,
+                    customer.FirstName,
+                    customer.LastName,
+                    customer.MiddleName,
+                    customer.EmailAddress,
+                    customer.Phone
+                }
+            });
         }
 
         private string GenerateJwt(LoginCredentials loginCredentials, string role)
