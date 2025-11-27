@@ -107,8 +107,8 @@ namespace cl_be.Controllers
                 Phone = registerCredentials.Phone,
 
                 // I campi hash e salt non possono essere NULL quindi mettiamo dei dummy
-                PasswordHash = "",
-                PasswordSalt = ""
+                //PasswordHash = "",
+                //PasswordSalt = ""
             };
 
             _adventureContext.Customers.Add(customer);
