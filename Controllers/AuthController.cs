@@ -115,13 +115,12 @@ namespace cl_be.Controllers
             await _adventureContext.SaveChangesAsync();
 
             // Salvo i credenziali del nuovo Customer nell'altro db
-            var customerId = customer.CustomerId;
             var salt = PasswordHelper.GenerateSalt();
             var hash = PasswordHelper.GenerateHash(registerCredentials.Password, salt);
 
             var userLogin = new UserLogin
             {
-                CustomerId = customerId,
+                CustomerId = customer.CustomerId,
                 Email = registerCredentials.Email,
                 PasswordSalt = salt,
                 PasswordHash = hash,
@@ -133,18 +132,35 @@ namespace cl_be.Controllers
             await _context.SaveChangesAsync();
 
             // Ritorna 201 created (senza salvataggio del password non-hashato)
-            return StatusCode(StatusCodes.Status201Created, new
+            // Questo serve solo per far vedere lo status dell'operazione della registrazione
+            //return StatusCode(StatusCodes.Status201Created, new
+            //{
+            //    message = "Customer registered successfully.",
+            //    customer = new
+            //    {
+            //        customer.CustomerId,
+            //        customer.FirstName,
+            //        customer.LastName,
+            //        customer.MiddleName,
+            //        customer.EmailAddress,
+            //        customer.Phone
+            //    }
+            //});
+
+            // logica dell'accesso automatico
+            string role = "User";
+            var loginCredentials = new LoginCredentials
             {
-                message = "Customer registered successfully.",
-                customer = new
-                {
-                    customer.CustomerId,
-                    customer.FirstName,
-                    customer.LastName,
-                    customer.MiddleName,
-                    customer.EmailAddress,
-                    customer.Phone
-                }
+                Email = registerCredentials.Email,
+                Password = registerCredentials.Password,
+            };
+
+            string token = GenerateJwt(loginCredentials, customer.CustomerId, role);
+
+            return Ok(new
+            {
+                message = "Registration successful. Logged in automatically.",
+                token
             });
         }
 
