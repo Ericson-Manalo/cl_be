@@ -43,6 +43,18 @@ namespace cl_be.Controllers
             if (order == null)
                 return NotFound("Order not found");
 
+
+            //// Recupero CustomerId dal JWT
+            //var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+            //if (customerIdClaim == null)
+            //    return Unauthorized("Invalid token");
+
+            //int customerId = int.Parse(customerIdClaim);
+
+            //// Controllo che l'ordine appartenga al cliente
+            //if (order.CustomerId != customerId)
+            //    return Forbid("This order does not belong to the authenticated user");
+
             // Recupero gli items dell’ordine
             var items = await _context.SalesOrderDetails
                 .Where(i => i.SalesOrderId == orderId)
