@@ -198,6 +198,15 @@ namespace cl_be.Controllers
         [HttpPost("Refresh")]
         public async Task<IActionResult> Refresh()
         {
+            // Some variables for printing the current time in the console:
+            var utcNow = DateTime.UtcNow;
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+            var timeUtcPlus1 = TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($">> REFRESH TOKEN REQUEST RECEIVED at {timeUtcPlus1:yyyy-MM-dd HH:mm:ss}");
+            Console.ResetColor();
+
             var refreshToken = Request.Cookies["refreshToken"];
 
             if (string.IsNullOrEmpty(refreshToken))
@@ -207,14 +216,22 @@ namespace cl_be.Controllers
                 .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
 
             if (storedToken == null || storedToken.IsRevoked || storedToken.Expires <= DateTime.UtcNow)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($">> REFRESH FAILED: TOKEN IS INVALID OR EXPIRED {timeUtcPlus1:yyyy-MM-dd HH:mm:ss}");
+                Console.ResetColor();
                 return Unauthorized(new { message = "Refresh token is invalid or expired" });
+            }
 
             // Recupero l'utente collegato al CustomerId
             var userLogin = await _context.UserLogins
                 .FirstOrDefaultAsync(u => u.CustomerId == storedToken.CustomerId);
 
             if (userLogin == null)
+            {
+                Console.WriteLine("Refresh failed: User not found");
                 return Unauthorized(new { message = "User not found" });
+            }
 
             string role = userLogin.Role == 2 ? "Admin" : "User";
 
@@ -231,6 +248,10 @@ namespace cl_be.Controllers
             var newRefreshToken = GenerateRefreshToken();
             await SaveRefreshTokenToDb(userLogin.CustomerId, newRefreshToken);
             SetRefreshTokenCookie(newRefreshToken);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($">> NEW ACCESS TOKEN SENT TO CLIENT at {timeUtcPlus1:yyyy-MM-dd HH:mm:ss}");
+            Console.ResetColor();
 
             return Ok(new { token = newAccessToken });
         }
@@ -277,7 +298,7 @@ namespace cl_be.Controllers
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 Expires = token.Expires
             };
 
