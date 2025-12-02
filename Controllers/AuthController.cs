@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace cl_be.Controllers
@@ -56,6 +58,13 @@ namespace cl_be.Controllers
 
             // JWT
             var token = GenerateJwt(loginCredentials, id, role);
+
+            var refreshToken = GenerateRefreshToken();
+
+            // Save refresh token in DB (CustomerId FK)
+            await SaveRefreshTokenToDb(id, refreshToken);
+
+            SetRefreshTokenCookie(refreshToken);
 
             return Ok(new { Message = "Login successful", token});
         }
@@ -159,9 +168,92 @@ namespace cl_be.Controllers
 
             return Ok(new
             {
-                message = "Registration successful. Logged in automatically.",
-                token
+                message = "Registration successful. Logged in automatically.", token
             });
+        }
+
+        [HttpPost("Logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var refreshTokenValue = Request.Cookies["refreshToken"];
+
+            if (!string.IsNullOrEmpty(refreshTokenValue))
+            {
+                var storedToken = await _context.RefreshTokens
+                    .FirstOrDefaultAsync(rt => rt.Token == refreshTokenValue);
+
+                if (storedToken != null)
+                {
+                    storedToken.IsRevoked = true;
+                    storedToken.ModifiedDate = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                }
+
+                Response.Cookies.Delete("refreshToken");
+            }
+
+            return Ok(new { message = "Logged out successfully" });
+        }
+
+        [HttpPost("Refresh")]
+        public async Task<IActionResult> Refresh()
+        {
+            // Some variables for printing the current time in the console:
+            var utcNow = DateTime.UtcNow;
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+            var timeUtcPlus1 = TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($">> REFRESH TOKEN REQUEST RECEIVED at {timeUtcPlus1:yyyy-MM-dd HH:mm:ss}");
+            Console.ResetColor();
+
+            var refreshToken = Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(refreshToken))
+                return Unauthorized(new { message = "Refresh token is missing" });
+
+            var storedToken = await _context.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+
+            if (storedToken == null || storedToken.IsRevoked || storedToken.Expires <= DateTime.UtcNow)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($">> REFRESH FAILED: TOKEN IS INVALID OR EXPIRED {timeUtcPlus1:yyyy-MM-dd HH:mm:ss}");
+                Console.ResetColor();
+                return Unauthorized(new { message = "Refresh token is invalid or expired" });
+            }
+
+            // Recupero l'utente collegato al CustomerId
+            var userLogin = await _context.UserLogins
+                .FirstOrDefaultAsync(u => u.CustomerId == storedToken.CustomerId);
+
+            if (userLogin == null)
+            {
+                Console.WriteLine("Refresh failed: User not found");
+                return Unauthorized(new { message = "User not found" });
+            }
+
+            string role = userLogin.Role == 2 ? "Admin" : "User";
+
+            // GenerateJwt usa solo l'Email, la Password non viene usata
+            var loginCredentials = new LoginCredentials
+            {
+                Email = userLogin.Email,
+                Password = string.Empty
+            };
+
+            var newAccessToken = GenerateJwt(loginCredentials, userLogin.CustomerId, role);
+
+            // Ruoto il refresh token
+            var newRefreshToken = GenerateRefreshToken();
+            await SaveRefreshTokenToDb(userLogin.CustomerId, newRefreshToken);
+            SetRefreshTokenCookie(newRefreshToken);
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($">> NEW ACCESS TOKEN SENT TO CLIENT at {timeUtcPlus1:yyyy-MM-dd HH:mm:ss}");
+            Console.ResetColor();
+
+            return Ok(new { token = newAccessToken });
         }
 
         private string GenerateJwt(LoginCredentials loginCredentials, int id, string role)
@@ -186,6 +278,56 @@ namespace cl_be.Controllers
             var token = tokenHandler.CreateToken(tokenDescriptor);
             string tokenString = tokenHandler.WriteToken(token);
             return tokenString;
+        }
+
+        private RefreshToken GenerateRefreshToken()
+        {
+            return new RefreshToken
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Expires = DateTime.UtcNow.AddDays(7),
+                Created = DateTime.UtcNow,
+                IsRevoked = true,
+                TotalRefreshes = 0,
+            };
+        }
+
+        private void SetRefreshTokenCookie(RefreshToken token)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = token.Expires
+            };
+
+            Response.Cookies.Append("refreshToken", token.Token, cookieOptions);
+        }
+
+        private async Task SaveRefreshTokenToDb(int customerId, RefreshToken newToken)
+        {
+            var existing = await _context.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.CustomerId == customerId);
+
+            if (existing == null)
+            {
+                newToken.CustomerId = customerId;
+                await _context.RefreshTokens.AddAsync(newToken);
+            }
+            else
+            {
+                existing.Token = newToken.Token;
+                existing.Created = newToken.Created;
+                existing.Expires = newToken.Expires;
+                existing.IsRevoked = false;
+                existing.ModifiedDate = DateTime.UtcNow;
+                existing.TotalRefreshes += 1;
+
+                _context.RefreshTokens.Update(existing);
+            }
+
+            await _context.SaveChangesAsync();
         }
     }
 
