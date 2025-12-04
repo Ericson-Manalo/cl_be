@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using cl_be.Models;
 
@@ -11,9 +12,11 @@ using cl_be.Models;
 namespace cl_be.Migrations
 {
     [DbContext(typeof(AdventureWorksLt2019Context))]
-    partial class AdventureWorksLt2019ContextModelSnapshot : ModelSnapshot
+    [Migration("20251204155606_AddCartItems")]
+    partial class AddCartItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -45,9 +45,13 @@ public partial class AdventureWorksLt2019Context : DbContext
 
     public virtual DbSet<VProductModelCatalogDescription> VProductModelCatalogDescriptions { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=localhost\\SQLEXPRESS;Database=AdventureWorksLT2019;Trusted_Connection=True;TrustServerCertificate=True;");
+    // New CONTEXT we added
+    public virtual DbSet<CartItem> CartItems { get; set; }
+
+
+    //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+    //        => optionsBuilder.UseSqlServer("Server=localhost\\SQLEXPRESS;Database=AdventureWorksLT2019;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -633,6 +637,54 @@ public partial class AdventureWorksLt2019Context : DbContext
             entity.Property(e => e.WarrantyPeriod).HasMaxLength(256);
             entity.Property(e => e.Wheel).HasMaxLength(256);
         });
+
+        // The purpose of this is to precisely define how your new table
+        // should look in SQL, keeping it 100% consistent with the AdventureWorks format.
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasKey(e => e.CartItemId)
+                .HasName("PK_CartItems_CartItemID");
+
+            entity.ToTable("CartItems", "SalesLT", tb =>
+                tb.HasComment("Shopping cart items selected by users but not yet purchased."));
+
+            entity.Property(e => e.CartItemId)
+                .HasComment("Primary key for CartItem records.")
+                .HasColumnName("CartItemID");
+
+            entity.Property(e => e.CustomerId)
+                .HasComment("Customer who owns the cart. Foreign key to Customer.CustomerID.")
+                .HasColumnName("CustomerID");
+
+            entity.Property(e => e.ProductId)
+                .HasComment("Product added to cart. Foreign key to Product.ProductID.")
+                .HasColumnName("ProductID");
+
+            entity.Property(e => e.Quantity)
+                .HasComment("Quantity of the product in the cart.");
+
+            entity.Property(e => e.UnitPrice)
+                .HasComment("Unit price at the moment the item was added to the cart.")
+                .HasColumnType("money");
+
+            entity.Property(e => e.DateAdded)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("Date the product was added to the cart.")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Customer)
+                .WithMany()
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CartItems_Customer_CustomerID");
+
+            entity.HasOne(d => d.Product)
+                .WithMany()
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CartItems_Product_ProductID");
+        });
+
 
         OnModelCreatingPartial(modelBuilder);
     }
