@@ -32,12 +32,14 @@ namespace cl_be.Controllers
         [HttpPost("Login")]
         public async Task<IActionResult> Login(LoginCredentials loginCredentials)
         {
+            // Controllo se l'email è già esistente
             var user = await _context.UserLogins
                 .FirstOrDefaultAsync(u => u.Email == loginCredentials.Email);
 
             if (user == null)
                 return Unauthorized(new { message = "Email is not registered" });
 
+            // Utilizzo PasswordHelper per comparare il password inserito
             bool isValid = PasswordHelper.VerifyPassword(
                 loginCredentials.Password,
                 user.PasswordHash,
@@ -56,16 +58,15 @@ namespace cl_be.Controllers
             // Check user's role
             string role = user.Role == 2 ? "Admin" : "User";
 
-            // JWT
+            // Genero il JWT inserendo i credenziali e altri CLAIMS come id e role
             var token = GenerateJwt(loginCredentials, id, role);
 
+            // Genero anche il refresh token per far rimanere accesso l'utente
             var refreshToken = GenerateRefreshToken();
-
-            // Save refresh token in DB (CustomerId FK)
             await SaveRefreshTokenToDb(id, refreshToken);
-
             SetRefreshTokenCookie(refreshToken);
 
+            // Ritorno un messaggio e il token se va tutto ok.
             return Ok(new { Message = "Login successful", token});
         }
 

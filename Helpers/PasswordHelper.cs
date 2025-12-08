@@ -24,7 +24,7 @@ namespace cl_be.Helpers
             return BitConverter.ToString(hashBytes).Replace("-", ""); // hex string
         }
 
-        // Verifica se il password corriponde al hash e salt
+        // Verifica se il password inserito corriponde al hash e salt salvati nel DB
         public static bool VerifyPassword(string password, string storedHash, string storedSalt)
         {
             var computedHash = GenerateHash(password, storedSalt);
