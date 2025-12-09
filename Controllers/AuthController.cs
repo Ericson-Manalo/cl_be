@@ -287,7 +287,7 @@ namespace cl_be.Controllers
                 Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
                 Expires = DateTime.UtcNow.AddDays(7),
                 Created = DateTime.UtcNow,
-                IsRevoked = true,
+                IsRevoked = false,
                 TotalRefreshes = 0,
             };
         }
