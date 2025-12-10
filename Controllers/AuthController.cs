@@ -36,7 +36,9 @@ namespace cl_be.Controllers
                 .FirstOrDefaultAsync(u => u.Email == loginCredentials.Email);
 
             if (user == null)
-                return Unauthorized(new { message = "Email is not registered" });
+            {
+                return Unauthorized(new { message = "Invalid email or password" });
+            }
 
             bool isValid = PasswordHelper.VerifyPassword(
                 loginCredentials.Password,
@@ -48,7 +50,7 @@ namespace cl_be.Controllers
                 return StatusCode(409, new { requiresPasswordUpdate = true });
 
             if (!isValid)
-                return Unauthorized(new { message = "Password invalid" });
+                return Unauthorized(new { message = "Invalid email or password" });
 
             // Prendo Id del customer
             int id = user.CustomerId;
@@ -66,7 +68,7 @@ namespace cl_be.Controllers
 
             SetRefreshTokenCookie(refreshToken);
 
-            return Ok(new { Message = "Login successful", token});
+            return Ok(new { message = "Login successful", token});
         }
 
         [HttpPost("PasswordReset")]
