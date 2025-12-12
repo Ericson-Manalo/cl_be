@@ -2,11 +2,11 @@
 {
     public class RegisterCredentials
     {
-        public string Name { get; set; }
+        public string FirstName { get; set; }
 
-        public string Surname { get; set; }
+        public string LastName { get; set; }
         
-        public string? Middlename { get; set; } // optional
+        public string? MiddleName { get; set; } // optional
 
         public string Email { get; set; }
 
