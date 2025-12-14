@@ -111,9 +111,9 @@ namespace cl_be.Controllers
             // Salvo il nuovo Customer nel db originale
             var customer = new Customer
             {
-                FirstName = registerCredentials.Name,
-                LastName = registerCredentials.Surname,
-                MiddleName = registerCredentials.Middlename,
+                FirstName = registerCredentials.FirstName,
+                LastName = registerCredentials.LastName,
+                MiddleName = registerCredentials.MiddleName,
                 EmailAddress = registerCredentials.Email,
                 Phone = registerCredentials.Phone,
 

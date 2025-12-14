@@ -66,6 +66,14 @@ namespace cl_be
                     };
                 });
 
+            // In Program.cs
+            builder.Services.AddDbContext<AdventureWorksLt2019Context>(options =>
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("AdventureWorksLT2019"),
+                    sqlOptions => sqlOptions.UseCompatibilityLevel(110) // <--- AGGIUNGI QUESTA RIGA
+                ));
+
+
             builder.Services.AddAuthorization(opt =>
             {
                 opt.AddPolicy("AdminPolicy", policy =>
@@ -79,13 +87,15 @@ namespace cl_be
                 });
             });
 
-            //Servizio per connettersi al db AdventureWorksLt2019
-            builder.Services.AddDbContext<AdventureWorksLt2019Context>(options =>
-            {
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("AdventureWorksLT2019")
-                    ?? throw new InvalidOperationException("Connessione non avvenuta"));
-            });
+            ////Servizio per connettersi al db AdventureWorksLt2019
+            //builder.Services.AddDbContext<AdventureWorksLt2019Context>(options =>
+            //{
+            //    options.UseSqlServer(
+            //        builder.Configuration.GetConnectionString("AdventureWorksLT2019")
+
+            //        ?? throw new InvalidOperationException("Connessione non avvenuta"))
+            //    ;
+            //});
 
 
             //Servizio per connettersi al db ClcredsDb
