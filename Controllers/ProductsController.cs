@@ -78,16 +78,18 @@ namespace cl_be.Controllers
             return await _context.Products.ToListAsync();
         }
 
-        // GET: api/Products/paged (Principale endpoint per il catalogo)
         [HttpGet("paged")]
         public async Task<Page<ProductCardDto>> GetPagedProducts(
             int pageNumber = 1,
             int pageSize = 20,
-            int? categoryId = null)
+            int? categoryId = null,
+            string? mainCategory = null
+            ) 
         {
             var query = _context.Products
                 .AsNoTracking()
                 .Include(p => p.ProductCategory)
+                .ThenInclude(c => c.ParentProductCategory)
                 .AsQueryable();
 
             // LOGICA CORRETTA: Filtro gerarchico
@@ -98,6 +100,22 @@ namespace cl_be.Controllers
 
                 query = query.Where(p => p.ProductCategoryId.HasValue &&
                                          allowedCategoryIds.Contains(p.ProductCategoryId.Value));
+            }
+
+            // Main category filter (via parent)
+            if (!string.IsNullOrWhiteSpace(mainCategory))
+            {
+                query = query.Where(p =>
+                    p.ProductCategory != null &&
+                    p.ProductCategory.ParentProductCategory != null &&
+                    p.ProductCategory.ParentProductCategory.Name.ToLower() == mainCategory.ToLower()
+                );
+            }
+         
+            // Sub category filter
+            if (categoryId.HasValue)
+            {
+                query = query.Where(p => p.ProductCategoryId == categoryId.Value);
             }
 
             var totalItems = await query.CountAsync();
@@ -135,14 +153,26 @@ namespace cl_be.Controllers
 
         [HttpGet("categories")]
         [ProducesResponseType(typeof(List<CategoryDto>), 200)]
-        public async Task<ActionResult<List<CategoryDto>>> GetCategories()
+        public async Task<ActionResult<List<CategoryDto>>> GetCategories(string? mainCategory = null)
         {
-            // Nota: Qui manteniamo un conteggio semplice per performance, 
-            // oppure potresti voler applicare la stessa logica ricorsiva se necessario.
-            // Per ora restituisce tutte le categorie.
-            var categories = await _context.ProductCategories
+            var query = _context.ProductCategories
                 .AsNoTracking()
-                .OrderBy(c => c.Name)
+                .Include(c => c.Products)
+                .AsQueryable();
+
+            // Only sub-categories
+            query = query.Where(c => c.ParentProductCategoryId != null);
+
+            if (!string.IsNullOrWhiteSpace(mainCategory))
+            {
+                query = query.Where(c => 
+                    c.ParentProductCategory != null &&
+                    c.ParentProductCategory.Name.ToLower() == mainCategory.ToLower()
+                );
+            }
+
+            var categories = await query
+                .OrderByDescending(c => c.Products.Count())
                 .Select(c => new CategoryDto
                 {
                     CategoryId = c.ProductCategoryId,
