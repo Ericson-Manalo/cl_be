@@ -460,6 +460,31 @@ namespace cl_be.Controllers
         {
             return _context.Products.Any(e => e.ProductId == id);
         }
+
+        // =================================================================================================
+        // ADMIN PRODUCT ENDPOINTS
+        // =================================================================================================
+        
+        [HttpGet("admin")]
+        public async Task<ActionResult<IEnumerable<ProductListDto>>> GetProductsForAdmin()
+        {
+            var products = await _context.Products
+                .AsNoTracking()
+                .Select(p => new ProductListDto
+                {
+                    ProductId = p.ProductId,
+                    Name = p.Name,
+                    Color = p.Color,
+                    StandardCost = p.StandardCost,
+                    ListPrice = p.ListPrice,
+                    Size = p.Size,
+                    Weight = p.Weight
+                })
+                .ToListAsync();
+
+            return Ok(products);
+        }
+
     }
 }
 
