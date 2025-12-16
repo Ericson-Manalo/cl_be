@@ -29,8 +29,23 @@ namespace cl_be.Services.Implementations
                     ? query.OrderByDescending(p => p.ListPrice)
                     : query.OrderBy(p => p.ListPrice),
 
-                _ => query.OrderBy(p => p.ProductId)
-            };
+                "category" => sortDirection == "desc"
+                    ? query.OrderByDescending(p => p.ProductCategory!.Name)
+                    : query.OrderBy(p => p.ProductCategory!.Name),
+
+                // I want to sort parent category too!
+                "parentcategory" => sortDirection == "desc"
+                    ? query.OrderByDescending(p => 
+                        p.ProductCategory != null &&
+                        p.ProductCategory.ParentProductCategory != null
+                            ? p.ProductCategory.ParentProductCategory.Name: null)
+                    : query.OrderBy(p => 
+                        p.ProductCategory != null &&
+                        p.ProductCategory.ParentProductCategory != null
+                            ? p.ProductCategory.ParentProductCategory.Name : null),
+
+                _ => query.OrderBy(p => p.ProductId),
+            };  
 
             var totalCount = await query.CountAsync();
 
@@ -40,12 +55,22 @@ namespace cl_be.Services.Implementations
                 .Select(p => new ProductListDto
                 {
                     ProductId = p.ProductId,
-                    Name = p.Name,
-                    Color = p.Color,
-                    StandardCost = p.StandardCost,
+                    ProductNumber = p.ProductNumber,
+                    Name = p.Name,                 
                     ListPrice = p.ListPrice,
-                    Size = p.Size,
-                    Weight = p.Weight
+                    CategoryId = p.ProductCategoryId,
+                    CategoryName = p.ProductCategory != null
+                        ? p.ProductCategory.Name
+                        : null,
+
+                    ParentCategoryId = p.ProductCategory != null
+                        ? p.ProductCategory.ParentProductCategoryId
+                        : null,
+
+                    ParentCategoryName = p.ProductCategory != null
+                        && p.ProductCategory.ParentProductCategory != null
+                            ? p.ProductCategory.ParentProductCategory.Name
+                            : null
                 })
                 .ToListAsync();
 

@@ -2,9 +2,7 @@
 using cl_be.Models.Dto.ProductDto;
 using cl_be.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace cl_be.Controllers.Admin
 {
