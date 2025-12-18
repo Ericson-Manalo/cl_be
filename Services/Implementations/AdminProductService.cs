@@ -35,17 +35,17 @@ namespace cl_be.Services.Implementations
 
                 // I want to sort parent category too!
                 "parentcategory" => sortDirection == "desc"
-                    ? query.OrderByDescending(p => 
+                    ? query.OrderByDescending(p =>
                         p.ProductCategory != null &&
                         p.ProductCategory.ParentProductCategory != null
-                            ? p.ProductCategory.ParentProductCategory.Name: null)
-                    : query.OrderBy(p => 
+                            ? p.ProductCategory.ParentProductCategory.Name : null)
+                    : query.OrderBy(p =>
                         p.ProductCategory != null &&
                         p.ProductCategory.ParentProductCategory != null
                             ? p.ProductCategory.ParentProductCategory.Name : null),
 
                 _ => query.OrderBy(p => p.ProductId),
-            };  
+            };
 
             var totalCount = await query.CountAsync();
 
@@ -56,7 +56,7 @@ namespace cl_be.Services.Implementations
                 {
                     ProductId = p.ProductId,
                     ProductNumber = p.ProductNumber,
-                    Name = p.Name,                 
+                    Name = p.Name,
                     ListPrice = p.ListPrice,
                     CategoryId = p.ProductCategoryId,
                     CategoryName = p.ProductCategory != null
@@ -70,7 +70,9 @@ namespace cl_be.Services.Implementations
                     ParentCategoryName = p.ProductCategory != null
                         && p.ProductCategory.ParentProductCategory != null
                             ? p.ProductCategory.ParentProductCategory.Name
-                            : null
+                            : null,
+
+                    ModifiedDate = p.ModifiedDate,
                 })
                 .ToListAsync();
 
@@ -79,6 +81,73 @@ namespace cl_be.Services.Implementations
                 TotalCount = totalCount,
                 Items = items
             };
+        }
+
+        public async Task<AdminProductEditDto?> GetProductForEditAsync(int productId)
+        {
+            var product = await _context.Products
+                .AsNoTracking()
+                .Include(p => p.ProductCategory)
+                .Include(p => p.SalesOrderDetails)
+                .FirstOrDefaultAsync(p => p.ProductId == productId);
+
+            if (product == null)
+                return null;
+
+            return new AdminProductEditDto
+            {
+                // General
+                ProductId = product.ProductId,
+                Name = product.Name,
+                ProductNumber = product.ProductNumber,
+                CategoryId = product.ProductCategoryId,
+                ParentCategoryId = product.ProductCategory?.ParentProductCategoryId,
+                ProductModelId = product.ProductModelId,
+
+                // Pricing
+                ListPrice = product.ListPrice,
+                StandardCost = product.StandardCost,
+
+                // Attributes
+                Color = product.Color,
+                Size = product.Size,
+                Weight = product.Weight,
+
+                // Availability
+                SellStartDate = product.SellStartDate,
+                SellEndDate = product.SellEndDate,
+                DiscontinuedDate = product.DiscontinuedDate,
+
+                // Rules
+                HasOrders = product.SalesOrderDetails.Any()
+            };
+        }
+
+        public async Task<IEnumerable<AdminCategoryDto>> GetCategoriesAsync()
+        {
+            return await _context.ProductCategories
+                .AsNoTracking()
+                .Select(c => new AdminCategoryDto
+                {
+                    ProductCategoryId = c.ProductCategoryId,
+                    Name = c.Name,
+                    ParentProductCategoryId = c.ParentProductCategoryId,
+                })
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<AdminProductModelDto>> GetModelsAsync()
+        {
+            return await _context.ProductModels
+                .AsNoTracking()
+                .Select(m => new AdminProductModelDto
+                {
+                    ProductModelId = m.ProductModelId,
+                    Name = m.Name
+                })
+                .OrderBy(m => m.Name)
+                .ToListAsync();
         }
     }
 }
