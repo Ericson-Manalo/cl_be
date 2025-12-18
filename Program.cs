@@ -1,4 +1,5 @@
 
+using cl_be.Interfaces.IServices;
 using cl_be.Models;
 using cl_be.Models.Auth;
 using cl_be.Models.Services;
@@ -18,6 +19,7 @@ namespace cl_be
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            // Program.cs - Dependency Injection
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -75,6 +77,7 @@ namespace cl_be
                     sqlOptions => sqlOptions.UseCompatibilityLevel(110) // <--- AGGIUNGI QUESTA RIGA
                 ));
 
+            builder.Services.AddScoped<ICartService, CartService>();
 
             builder.Services.AddAuthorization(opt =>
             {

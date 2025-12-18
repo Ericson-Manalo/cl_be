@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using cl_be.Models;
 
@@ -11,9 +12,11 @@ using cl_be.Models;
 namespace cl_be.Migrations
 {
     [DbContext(typeof(AdventureWorksLt2019Context))]
-    partial class AdventureWorksLt2019ContextModelSnapshot : ModelSnapshot
+    [Migration("20251211152905_AddCartTable")]
+    partial class AddCartTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -133,81 +136,26 @@ namespace cl_be.Migrations
                 {
                     b.Property<int>("CartId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("CartID")
-                        .HasComment("Primary key for Cart records.");
+                        .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CartId"));
 
-                    b.Property<DateTime>("CreatedDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())")
-                        .HasComment("Date and time the cart was created.");
-
                     b.Property<int>("CustomerId")
-                        .HasColumnType("int")
-                        .HasColumnName("CustomerID")
-                        .HasComment("Customer identification number. Foreign key to Customer.CustomerID.");
-
-                    b.Property<DateTime>("ModifiedDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())")
-                        .HasComment("Date and time the cart was last updated.");
-
-                    b.HasKey("CartId")
-                        .HasName("PK_Cart_CartID");
-
-                    b.HasIndex(new[] { "CustomerId" }, "IX_Cart_CustomerID");
-
-                    b.ToTable("Cart", "SalesLT", t =>
-                        {
-                            t.HasComment("Shopping cart for customers.");
-                        });
-                });
-
-            modelBuilder.Entity("cl_be.Models.CartItem", b =>
-                {
-                    b.Property<int>("CartItemId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("CartItemID")
-                        .HasComment("Primary key for CartItem records.");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CartItemId"));
-
-                    b.Property<DateTime>("AddedDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())")
-                        .HasComment("Date and time the item was added to cart.");
-
-                    b.Property<int>("CartId")
-                        .HasColumnType("int")
-                        .HasColumnName("CartID")
-                        .HasComment("Foreign key to Cart.CartID.");
+                        .HasColumnType("int");
 
                     b.Property<int>("ProductId")
-                        .HasColumnType("int")
-                        .HasColumnName("ProductID")
-                        .HasComment("Foreign key to Product.ProductID.");
+                        .HasColumnType("int");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("int")
-                        .HasComment("Quantity of product in cart.");
+                        .HasColumnType("int");
 
-                    b.HasKey("CartItemId")
-                        .HasName("PK_CartItem_CartItemID");
+                    b.HasKey("CartId");
 
-                    b.HasIndex(new[] { "CartId" }, "IX_CartItem_CartID");
+                    b.HasIndex("CustomerId");
 
-                    b.HasIndex(new[] { "ProductId" }, "IX_CartItem_ProductID");
+                    b.HasIndex("ProductId");
 
-                    b.ToTable("CartItem", "SalesLT", t =>
-                        {
-                            t.HasComment("Individual products in a shopping cart.");
-                        });
+                    b.ToTable("Cart");
                 });
 
             modelBuilder.Entity("cl_be.Models.Customer", b =>
@@ -1065,27 +1013,18 @@ namespace cl_be.Migrations
             modelBuilder.Entity("cl_be.Models.Cart", b =>
                 {
                     b.HasOne("cl_be.Models.Customer", "Customer")
-                        .WithMany("Carts")
+                        .WithMany("Cart")
                         .HasForeignKey("CustomerId")
-                        .IsRequired();
-
-                    b.Navigation("Customer");
-                });
-
-            modelBuilder.Entity("cl_be.Models.CartItem", b =>
-                {
-                    b.HasOne("cl_be.Models.Cart", "Cart")
-                        .WithMany("Items")
-                        .HasForeignKey("CartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("cl_be.Models.Product", "Product")
-                        .WithMany("CartItems")
+                        .WithMany("Cart")
                         .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Cart");
+                    b.Navigation("Customer");
 
                     b.Navigation("Product");
                 });
@@ -1200,14 +1139,9 @@ namespace cl_be.Migrations
                     b.Navigation("SalesOrderHeaderShipToAddresses");
                 });
 
-            modelBuilder.Entity("cl_be.Models.Cart", b =>
-                {
-                    b.Navigation("Items");
-                });
-
             modelBuilder.Entity("cl_be.Models.Customer", b =>
                 {
-                    b.Navigation("Carts");
+                    b.Navigation("Cart");
 
                     b.Navigation("CustomerAddresses");
 
@@ -1216,7 +1150,7 @@ namespace cl_be.Migrations
 
             modelBuilder.Entity("cl_be.Models.Product", b =>
                 {
-                    b.Navigation("CartItems");
+                    b.Navigation("Cart");
 
                     b.Navigation("SalesOrderDetails");
                 });
