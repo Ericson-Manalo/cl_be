@@ -34,13 +34,11 @@ namespace cl_be.Models.Services
             if (product == null)
                 throw new KeyNotFoundException("Product does not exist.");
 
-         
             var cart = await _context.Carts
                 .Include(c => c.Items)
-                    .ThenInclude(i => i.Product) 
+                .ThenInclude(i => i.Product)
                 .FirstOrDefaultAsync(c => c.CustomerId == customerId);
 
-         
             if (cart == null)
             {
                 cart = new Cart
@@ -51,7 +49,7 @@ namespace cl_be.Models.Services
                     Items = new List<CartItem>()
                 };
                 _context.Carts.Add(cart);
-                await _context.SaveChangesAsync();  // Salva per generare CartId
+                await _context.SaveChangesAsync();
             }
 
             // Aggiungi o aggiorna item
@@ -69,19 +67,22 @@ namespace cl_be.Models.Services
                     CartId = cart.CartId,
                     ProductId = addToCartDto.ProductId,
                     Quantity = addToCartDto.Quantity,
-                    AddedDate = DateTime.UtcNow,
-                    Product = product  
+                    AddedDate = DateTime.UtcNow
                 };
-                cart.Items.Add(newItem); 
+                cart.Items.Add(newItem);
                 _context.CartItems.Add(newItem);
             }
 
-       
             cart.ModifiedDate = DateTime.UtcNow;
             _context.Carts.Update(cart);
 
             // Salva tutto
             await _context.SaveChangesAsync();
+
+            cart = await _context.Carts
+                .Include(c => c.Items)
+                .ThenInclude(i => i.Product)
+                .FirstOrDefaultAsync(c => c.CartId == cart.CartId);
 
             var response = new CartResponseDTO
             {
@@ -90,10 +91,10 @@ namespace cl_be.Models.Services
                 {
                     CartItemId = i.CartItemId,
                     ProductId = i.ProductId,
-                    ProductName = i.Product.Name,
+                    ProductName = i.Product.Name,      
                     Price = i.Product.ListPrice,
                     Quantity = i.Quantity,
-                    ThumbnailPhotoFileName = i.Product.ThumbnailPhotoFileName,
+                    ThumbnailPhotoFileName = i.Product.ThumbNailPhoto,
                     AddedDate = i.AddedDate
                 }).ToList()
             };
@@ -218,7 +219,7 @@ namespace cl_be.Models.Services
                     ProductName = i.Product.Name,
                     Price = i.Product.ListPrice,
                     Quantity = i.Quantity,
-                    ThumbnailPhotoFileName = i.Product.ThumbnailPhotoFileName,
+                    ThumbnailPhotoFileName = i.Product.ThumbNailPhoto,
                     AddedDate = i.AddedDate
                 }).ToList()
             }).ToList();
@@ -252,7 +253,7 @@ namespace cl_be.Models.Services
                     ProductName = i.Product.Name,
                     Price = i.Product.ListPrice,
                     Quantity = i.Quantity,
-                    ThumbnailPhotoFileName = i.Product.ThumbnailPhotoFileName,
+                    ThumbnailPhotoFileName = i.Product.ThumbNailPhoto,
                     AddedDate = i.AddedDate
                 }).ToList()
             };
@@ -261,6 +262,7 @@ namespace cl_be.Models.Services
 
 
         }
+        
 
         public async Task<int> GetCartItemsCountAsync(int customerId)
         {
@@ -321,7 +323,7 @@ namespace cl_be.Models.Services
                     ProductName = i.Product.Name,
                     Price = i.Product.ListPrice,
                     Quantity = i.Quantity,
-                    ThumbnailPhotoFileName = i.Product.ThumbnailPhotoFileName,
+                    ThumbnailPhotoFileName = i.Product.ThumbNailPhoto,
                     AddedDate = i.AddedDate
                 }).ToList()
             }).ToList();
@@ -370,7 +372,7 @@ namespace cl_be.Models.Services
                     ProductName = i.Product.Name,
                     Price = i.Product.ListPrice,
                     Quantity = i.Quantity,
-                    ThumbnailPhotoFileName = i.Product.ThumbnailPhotoFileName,
+                    ThumbnailPhotoFileName = i.Product.ThumbNailPhoto,
                     AddedDate = i.AddedDate
 
                 }).ToList()

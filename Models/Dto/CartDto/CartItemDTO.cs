@@ -9,7 +9,7 @@
         public decimal Price { get; set; }  // ListPrice del prodotto
         public int Quantity { get; set; }
         public decimal Subtotal => Price * Quantity;
-        public string? ThumbnailPhotoFileName { get; set; }
+        public byte[]? ThumbnailPhotoFileName { get; set; }
         public DateTime AddedDate { get; set; }
     }
 }

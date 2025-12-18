@@ -75,7 +75,7 @@ namespace cl_be
                     sqlOptions => sqlOptions.UseCompatibilityLevel(110) // <--- AGGIUNGI QUESTA RIGA
                 ));
 
-            //builder.Services.AddScoped<ICartService, CartService>();
+            builder.Services.AddScoped<ICartService, CartService>();
 
             builder.Services.AddAuthorization(opt =>
             {
