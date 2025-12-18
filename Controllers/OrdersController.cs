@@ -1,6 +1,7 @@
 ﻿using cl_be.Models;
 using cl_be.Models.Dto.AddressDto;
 using cl_be.Models.Dto.OrderDto;
+using cl_be.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,122 +13,32 @@ namespace cl_be.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // Proteggiamo l'intero controller
     public class OrdersController : ControllerBase
     {
+        private readonly IOrderService _orderService;
 
-        private readonly AdventureWorksLt2019Context _context;
-
-        public OrdersController(AdventureWorksLt2019Context context)
+        public OrdersController(IOrderService orderService)
         {
-            _context = context;
+            _orderService = orderService;
         }
 
-        // GET: api/<OrdersController>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
-
-        // GET api/<OrdersController>/5
-        //[Authorize]
         [HttpGet("{orderId}")]
         public async Task<ActionResult<OrderDetailDto>> GetOrderDetail(int orderId)
         {
-            // Recupero ordine + i due indirizzi + metodo spedizione
-            var order = await _context.SalesOrderHeaders
-                .Include(o => o.BillToAddress)
-                .Include(o => o.ShipToAddress)
-                .FirstOrDefaultAsync(o => o.SalesOrderId == orderId);
+            // 1. Estrazione ID dal Token (Unica logica che resta nel controller)
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+            if (string.IsNullOrEmpty(customerIdClaim)) return Unauthorized("Token non valido");
 
-            if (order == null)
-                return NotFound("Order not found");
+            int customerId = int.Parse(customerIdClaim);
 
+            // 2. Chiamata al Service
+            var dto = await _orderService.GetCustomerOrderDetailAsync(orderId, customerId);
 
-            //// Recupero CustomerId dal JWT
-            //var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-            //if (customerIdClaim == null)
-            //    return Unauthorized("Invalid token");
-
-            //int customerId = int.Parse(customerIdClaim);
-
-            //// Controllo che l'ordine appartenga al cliente
-            //if (order.CustomerId != customerId)
-            //    return Forbid("This order does not belong to the authenticated user");
-
-            // Recupero gli items dell’ordine
-            var items = await _context.SalesOrderDetails
-                .Where(i => i.SalesOrderId == orderId)
-                .Include(i => i.Product)
-                .Select(i => new OrderDetailItemDto
-                {
-                    ProductId = i.ProductId,
-                    ProductName = i.Product!.Name,
-                    OrderQty = i.OrderQty,
-                    UnitPrice = i.UnitPrice,
-                    LineTotal = i.LineTotal
-                })
-                .ToListAsync();
-
-            // Creo DTO completo
-            var dto = new OrderDetailDto
-            {
-                SalesOrderId = order.SalesOrderId,
-                SalesOrderNumber = order.SalesOrderNumber!,
-                OrderDate = order.OrderDate,
-                ShipDate = order.ShipDate,
-                Status = order.Status,
-                ShipMethod = order.ShipMethod!,
-                SubTotal = order.SubTotal,
-                TaxAmt = order.TaxAmt,
-                Freight = order.Freight,
-                TotalDue = order.TotalDue,
-
-                BillToAddress = order.BillToAddress != null
-                    ? new AddressesDetailDto
-                    {
-                        AddressId = order.BillToAddress.AddressId,
-                        AddressLine1 = order.BillToAddress.AddressLine1!,
-                        City = order.BillToAddress.City!,
-                        PostalCode = order.BillToAddress.PostalCode!
-                    }
-                    : null,
-
-                ShipToAddress = order.ShipToAddress != null
-                    ? new AddressesDetailDto
-                    {
-                        AddressId = order.ShipToAddress.AddressId,
-                        AddressLine1 = order.ShipToAddress.AddressLine1!,
-                        City = order.ShipToAddress.City!,
-                        PostalCode = order.ShipToAddress.PostalCode!
-                    }
-                    : null,
-
-                Items = items
-            };
+            if (dto == null)
+                return NotFound("Ordine non trovato o non appartenente a questo utente");
 
             return Ok(dto);
-        }
-
-
-
-
-        // POST api/<OrdersController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<OrdersController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<OrdersController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
         }
     }
 }
