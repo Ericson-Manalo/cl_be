@@ -63,7 +63,7 @@ namespace cl_be.Controllers.Admin
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAsync(
         int id,
-        [FromBody] UpdateProductDto dto)
+        [FromBody] AdminProductUpdateDto dto)
         {
             /* 1. Route vs Body guard */
             if (id != dto.ProductId)

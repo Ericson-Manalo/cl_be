@@ -150,7 +150,7 @@ namespace cl_be.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task UpdateAsync(UpdateProductDto dto)
+        public async Task UpdateAsync(AdminProductUpdateDto dto)
         {
             var product = await _context.Products
                 .FirstOrDefaultAsync(p => p.ProductId == dto.ProductId);
