@@ -60,6 +60,34 @@ namespace cl_be.Controllers.Admin
             return Ok(models);
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAsync(
+        int id,
+        [FromBody] UpdateProductDto dto)
+        {
+            /* 1. Route vs Body guard */
+            if (id != dto.ProductId)
+                return BadRequest("ProductId mismatch between route and body.");
+
+            /* 2. Model validation (DTO rules) */
+            if (!ModelState.IsValid)
+                return ValidationProblem(ModelState);
+
+            try
+            {
+                /* 3. Delegate to service layer */
+                await _adminProductService.UpdateAsync(dto);
+                return NoContent(); // 204
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
+        }
 
     }
 }

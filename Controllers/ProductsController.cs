@@ -226,7 +226,7 @@ namespace cl_be.Controllers
 
         // PUT: api/Products/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(int id, [FromBody] ProductUpdateDto dto)
+        public async Task<IActionResult> PutProduct(int id, [FromBody] AdminProductUpdateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (id != dto.ProductId) return BadRequest("ID mismatch");
