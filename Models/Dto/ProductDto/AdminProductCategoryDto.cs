@@ -1,6 +1,6 @@
 ﻿namespace cl_be.Models.Dto.ProductDto
 {
-    public class AdminCategoryDto
+    public class AdminProductCategoryDto
     {
         public int ProductCategoryId { get; set; }
         public string Name { get; set; } = null!;

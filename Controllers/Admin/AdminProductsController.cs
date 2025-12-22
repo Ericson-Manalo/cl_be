@@ -47,7 +47,7 @@ namespace cl_be.Controllers.Admin
         }
 
         [HttpGet("categories")]
-        public async Task<ActionResult<IEnumerable<AdminCategoryDto>>> GetCategories()
+        public async Task<ActionResult<IEnumerable<AdminProductCategoryDto>>> GetCategories()
         {
             var categories = await _adminProductService.GetCategoriesAsync();
             return Ok(categories);

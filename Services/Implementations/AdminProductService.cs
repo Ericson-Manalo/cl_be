@@ -123,11 +123,11 @@ namespace cl_be.Services.Implementations
             };
         }
 
-        public async Task<IEnumerable<AdminCategoryDto>> GetCategoriesAsync()
+        public async Task<IEnumerable<AdminProductCategoryDto>> GetCategoriesAsync()
         {
             return await _context.ProductCategories
                 .AsNoTracking()
-                .Select(c => new AdminCategoryDto
+                .Select(c => new AdminProductCategoryDto
                 {
                     ProductCategoryId = c.ProductCategoryId,
                     Name = c.Name,

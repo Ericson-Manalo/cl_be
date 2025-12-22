@@ -10,7 +10,7 @@ namespace cl_be.Services.Interfaces
 
         Task<AdminProductEditDto> GetProductForEditAsync(int productId);
 
-        Task<IEnumerable<AdminCategoryDto>> GetCategoriesAsync();
+        Task<IEnumerable<AdminProductCategoryDto>> GetCategoriesAsync();
 
         Task<IEnumerable<AdminProductModelDto>> GetModelsAsync();
 
