@@ -15,6 +15,6 @@ namespace cl_be.Services.Interfaces
         Task<IEnumerable<AdminProductModelDto>> GetModelsAsync();
 
         // PUT/PATCH:
-        Task UpdateAsync(UpdateProductDto dto);
+        Task UpdateAsync(AdminProductUpdateDto dto);
     }
 }

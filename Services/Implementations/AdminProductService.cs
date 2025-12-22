@@ -100,7 +100,7 @@ namespace cl_be.Services.Implementations
                 ProductId = product.ProductId,
                 Name = product.Name,
                 ProductNumber = product.ProductNumber,
-                CategoryId = product.ProductCategoryId,
+                ProductCategoryId = product.ProductCategoryId,
                 ParentCategoryId = product.ProductCategory?.ParentProductCategoryId,
                 ProductModelId = product.ProductModelId,
 

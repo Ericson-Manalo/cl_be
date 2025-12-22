@@ -6,7 +6,7 @@
         public int ProductId { get; set; }
         public string Name { get; set; } = null!;
         public string ProductNumber { get; set; } = null!;
-        public int? CategoryId { get; set; }
+        public int? ProductCategoryId { get; set; }
         public int? ParentCategoryId { get; set; }
         public int? ProductModelId { get; set; }
 
