@@ -1,8 +1,11 @@
 
+using cl_be.Interfaces.IServices;
 using cl_be.Models;
 using cl_be.Models.Auth;
 using cl_be.Models.Services;
 using cl_be.Services.Implementations;
+using cl_be.Services.Interfaces;
+using cl_be.Services;
 using cl_be.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +21,7 @@ namespace cl_be
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            // Program.cs - Dependency Injection
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -75,6 +79,7 @@ namespace cl_be
                     sqlOptions => sqlOptions.UseCompatibilityLevel(110) // <--- AGGIUNGI QUESTA RIGA
                 ));
 
+            builder.Services.AddScoped<ICartService, CartService>();
 
             builder.Services.AddAuthorization(opt =>
             {
@@ -128,6 +133,9 @@ namespace cl_be
             // Registra la configurazione e il servizio
             builder.Services.Configure<ReviewMDBConfig>(mongoSection);
             builder.Services.AddSingleton<ReviewService>();
+
+            builder.Services.AddScoped<ICustomerService, CustomerService>();
+            builder.Services.AddScoped<IOrderService, OrderService>();
 
             // Registra il Servizio AdminProductsService
             builder.Services.AddScoped<IAdminProductService, AdminProductService>();

@@ -45,9 +45,8 @@ public partial class AdventureWorksLt2019Context : DbContext
 
     public virtual DbSet<VProductModelCatalogDescription> VProductModelCatalogDescriptions { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=localhost\\SQLEXPRESS;Database=AdventureWorksLT2019;Trusted_Connection=True;TrustServerCertificate=True;");
+    public virtual DbSet<Cart> Carts { get; set; }
+    public virtual DbSet<CartItem> CartItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -150,14 +149,6 @@ public partial class AdventureWorksLt2019Context : DbContext
                 .HasComment("Date and time the record was last updated.")
                 .HasColumnType("datetime");
             entity.Property(e => e.NameStyle).HasComment("0 = The data in FirstName and LastName are stored in western style (first name, last name) order.  1 = Eastern style (last name, first name) order.");
-            //entity.Property(e => e.PasswordHash)
-            //    .HasMaxLength(128)
-            //    .IsUnicode(false)
-            //    .HasComment("Password for the e-mail account.");
-            //entity.Property(e => e.PasswordSalt)
-            //    .HasMaxLength(10)
-            //    .IsUnicode(false)
-            //    .HasComment("Random value concatenated with the password string before the password is hashed.");
             entity.Property(e => e.Phone)
                 .HasMaxLength(25)
                 .HasComment("Phone number associated with the person.");
@@ -428,10 +419,10 @@ public partial class AdventureWorksLt2019Context : DbContext
             entity.HasKey(e => new { e.SalesOrderId, e.SalesOrderDetailId }).HasName("PK_SalesOrderDetail_SalesOrderID_SalesOrderDetailID");
 
             entity.ToTable("SalesOrderDetail", "SalesLT", tb =>
-                {
-                    tb.HasComment("Individual products associated with a specific sales order. See SalesOrderHeader.");
-                    tb.HasTrigger("iduSalesOrderDetail");
-                });
+            {
+                tb.HasComment("Individual products associated with a specific sales order. See SalesOrderHeader.");
+                tb.HasTrigger("iduSalesOrderDetail");
+            });
 
             entity.HasIndex(e => e.Rowguid, "AK_SalesOrderDetail_rowguid").IsUnique();
 
@@ -479,10 +470,10 @@ public partial class AdventureWorksLt2019Context : DbContext
             entity.HasKey(e => e.SalesOrderId).HasName("PK_SalesOrderHeader_SalesOrderID");
 
             entity.ToTable("SalesOrderHeader", "SalesLT", tb =>
-                {
-                    tb.HasComment("General sales order information.");
-                    tb.HasTrigger("uSalesOrderHeader");
-                });
+            {
+                tb.HasComment("General sales order information.");
+                tb.HasTrigger("uSalesOrderHeader");
+            });
 
             entity.HasIndex(e => e.SalesOrderNumber, "AK_SalesOrderHeader_SalesOrderNumber").IsUnique();
 
@@ -632,6 +623,87 @@ public partial class AdventureWorksLt2019Context : DbContext
             entity.Property(e => e.WarrantyDescription).HasMaxLength(256);
             entity.Property(e => e.WarrantyPeriod).HasMaxLength(256);
             entity.Property(e => e.Wheel).HasMaxLength(256);
+        });
+
+        // ============================================
+        // CART CONFIGURATION
+        // ============================================
+        modelBuilder.Entity<Cart>(entity =>
+        {
+            entity.HasKey(e => e.CartId).HasName("PK_Cart_CartID");
+
+            entity.ToTable("Cart", "SalesLT", tb => tb.HasComment("Shopping cart for customers."));
+
+            entity.HasIndex(e => e.CustomerId, "IX_Cart_CustomerID");
+
+            entity.Property(e => e.CartId)
+                .HasComment("Primary key for Cart records.")
+                .HasColumnName("CartID");
+
+            entity.Property(e => e.CustomerId)
+                .HasComment("Customer identification number. Foreign key to Customer.CustomerID.")
+                .HasColumnName("CustomerID");
+
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("Date and time the cart was created.")
+                .HasColumnType("datetime");
+
+            entity.Property(e => e.ModifiedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("Date and time the cart was last updated.")
+                .HasColumnType("datetime");
+
+            // Relazione verso Customer
+            entity.HasOne(d => d.Customer)
+                .WithMany(p => p.Carts)
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        // ============================================
+        // CARTITEM CONFIGURATION
+        // ============================================
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasKey(e => e.CartItemId).HasName("PK_CartItem_CartItemID");
+
+            entity.ToTable("CartItem", "SalesLT", tb => tb.HasComment("Individual products in a shopping cart."));
+
+            entity.HasIndex(e => e.CartId, "IX_CartItem_CartID");
+            entity.HasIndex(e => e.ProductId, "IX_CartItem_ProductID");
+
+            entity.Property(e => e.CartItemId)
+                .HasComment("Primary key for CartItem records.")
+                .HasColumnName("CartItemID");
+
+            entity.Property(e => e.CartId)
+                .HasComment("Foreign key to Cart.CartID.")
+                .HasColumnName("CartID");
+
+            entity.Property(e => e.ProductId)
+                .HasComment("Foreign key to Product.ProductID.")
+                .HasColumnName("ProductID");
+
+            entity.Property(e => e.Quantity)
+                .HasComment("Quantity of product in cart.");
+
+            entity.Property(e => e.AddedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasComment("Date and time the item was added to cart.")
+                .HasColumnType("datetime");
+
+            // Relazione verso Cart con CASCADE DELETE
+            entity.HasOne(d => d.Cart)
+                .WithMany(p => p.Items)
+                .HasForeignKey(d => d.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Relazione verso Product
+            entity.HasOne(d => d.Product)
+                .WithMany(p => p.CartItems)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         OnModelCreatingPartial(modelBuilder);
