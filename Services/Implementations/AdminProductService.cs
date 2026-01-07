@@ -1,4 +1,5 @@
 ﻿using cl_be.Models;
+using cl_be.Models.Dto.CustomerDto;
 using cl_be.Models.Dto.ProductDto;
 using cl_be.Models.Pagination;
 using cl_be.Services.Interfaces;
@@ -15,6 +16,7 @@ namespace cl_be.Services.Implementations
             _context = context;
         }
 
+        // To get the list of products (table list version)
         public async Task<PagedResult<ProductListDto>> GetProductsAsync(int pageNumber, int pageSize, string? sortBy, string? sortDirection)
         {
             var query = _context.Products.AsNoTracking();
@@ -83,6 +85,42 @@ namespace cl_be.Services.Implementations
             };
         }
 
+        // To get the list of products (modern UI version)
+        public async Task<Page<ProductListDto>> GetAllProductsAsync(int page, int pageSize, string? search=null)
+        {
+            var query = _context.Products.AsNoTracking(); // AsNoTracking migliora le performance in lettura
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                // Rimuoviamo ToLower() per testare se il DB gestisce l'insensibilità di default
+                query = query.Where(p => p.Name.Contains(search) || p.ProductNumber.Contains(search));
+            }
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            var items = await query
+                .OrderBy(p => p.ProductId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new ProductListDto
+                {
+                    ProductId = p.ProductId,
+                    ProductNumber = p.ProductNumber,
+                    Name = p.Name,
+                })
+                .ToListAsync();
+
+            return new Page<ProductListDto>
+            {
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages,
+                Items = items
+            };
+        }
+
         public async Task<AdminProductEditDto?> GetProductForEditAsync(int productId)
         {
             var product = await _context.Products
@@ -123,6 +161,8 @@ namespace cl_be.Services.Implementations
             };
         }
 
+
+        // To get reference datas (categories and models)
         public async Task<IEnumerable<AdminProductCategoryDto>> GetCategoriesAsync()
         {
             return await _context.ProductCategories
@@ -150,6 +190,7 @@ namespace cl_be.Services.Implementations
                 .ToListAsync();
         }
 
+        // To update product
         public async Task UpdateAsync(AdminProductUpdateDto dto)
         {
             var product = await _context.Products

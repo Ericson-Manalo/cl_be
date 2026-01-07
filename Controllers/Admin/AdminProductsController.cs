@@ -1,5 +1,8 @@
 ﻿using cl_be.Models;
+using cl_be.Models.Dto.CustomerDto;
 using cl_be.Models.Dto.ProductDto;
+using cl_be.Models.Pagination;
+using cl_be.Services;
 using cl_be.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,16 +22,23 @@ namespace cl_be.Controllers.Admin
         }
 
         /// <summary>
-        /// Admin: get product list
+        /// Admin: get product list. THIS IS FOR TABLE LIST SET UP
         /// </summary>
+        //[HttpGet]
+        //public async Task<ActionResult<IEnumerable<ProductListDto>>> GetProducts(
+        //    int pageNumber = 1,
+        //    int pageSize = 20,
+        //    string? sortBy = null,
+        //    string? sortDirection = "asc")
+        //{
+        //    var result = await _adminProductService.GetProductsAsync(pageNumber, pageSize, sortBy, sortDirection);
+        //    return Ok(result);
+        //}
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProductListDto>>> GetProducts(
-            int pageNumber = 1,
-            int pageSize = 20,
-            string? sortBy = null,
-            string? sortDirection = "asc")
+        public async Task<ActionResult<Page<ProductListDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 50, [FromQuery] string? search = null)
         {
-            var result = await _adminProductService.GetProductsAsync(pageNumber, pageSize, sortBy, sortDirection);
+            var result = await _adminProductService.GetAllProductsAsync(page, pageSize, search);
             return Ok(result);
         }
 
