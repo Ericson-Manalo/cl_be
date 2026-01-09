@@ -1,11 +1,12 @@
 
 using cl_be.Interfaces.IServices;
+using cl_be.Middleware;
 using cl_be.Models;
 using cl_be.Models.Auth;
 using cl_be.Models.Services;
-using cl_be.Services.Implementations;
-using cl_be.Services.Interfaces;
+using cl_be.Repositories;
 using cl_be.Services;
+using cl_be.Services.Implementations;
 using cl_be.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -120,14 +121,14 @@ namespace cl_be
 
             // Controllo compatto, lancia eccezione se la sezione manca
             var mongoConfig = mongoSection.Get<ReviewMDBConfig>()
-                ?? throw new InvalidOperationException("La sezione ReviewsDB è mancante o non valida in appsettings.json");
+                ?? throw new InvalidOperationException("La sezione ReviewsDB Ã¨ mancante o non valida in appsettings.json");
 
             // Controlla che tutti i valori fondamentali siano presenti
             if (string.IsNullOrEmpty(mongoConfig.ConnectionString) ||
                 string.IsNullOrEmpty(mongoConfig.DatabaseName) ||
                 string.IsNullOrEmpty(mongoConfig.ReviewsCollectionName))
             {
-                throw new InvalidOperationException("La configurazione di MongoDB è incompleta. Controlla ReviewsDB in appsettings.json");
+                throw new InvalidOperationException("La configurazione di MongoDB Ã¨ incompleta. Controlla ReviewsDB in appsettings.json");
             }
 
             // Registra la configurazione e il servizio
@@ -140,7 +141,13 @@ namespace cl_be
             // Registra il Servizio AdminProductsService
             builder.Services.AddScoped<IAdminProductService, AdminProductService>();
 
-            var app = builder.Build();
+            // Repository concreto
+            builder.Services.AddScoped<ILogErrorRepository, LogErrorRepository>();
+            // Registrazione del repository e del servizio
+            builder.Services.AddScoped<ILogErrorService, LogErrorService>();
+            builder.Services.AddHttpContextAccessor();
+
+           var app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -149,6 +156,7 @@ namespace cl_be
                 app.UseSwaggerUI();
             }
 
+
             app.UseHttpsRedirection();
 
             // Inserisci qui il middleware CORS
@@ -156,6 +164,7 @@ namespace cl_be
 
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseMiddleware<ErrorLoggingMiddleware>();
 
             app.MapControllers();
 
