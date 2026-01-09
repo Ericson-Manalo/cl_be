@@ -11,7 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using cl_be.Models.Pagination;
 
-namespace cl_be.Controllers
+namespace cl_be.Controllers.Admin
 {
     [Authorize(Roles = "Admin")]
     [Route("api/admin/customers")]

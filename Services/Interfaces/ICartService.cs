@@ -1,7 +1,7 @@
 ﻿using cl_be.Models.Dto.CartDto;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace cl_be.Interfaces.IServices
+namespace cl_be.Services.Interfaces
 {
     /// <summary>
     /// Service interface for cart operations working directly with DbContext

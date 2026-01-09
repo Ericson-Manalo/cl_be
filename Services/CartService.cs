@@ -1,10 +1,11 @@
-﻿using cl_be.Interfaces.IServices;
+﻿using cl_be.Models;
 using cl_be.Models.Dto.CartDto;
+using cl_be.Services.Interfaces;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
-namespace cl_be.Models.Services
+namespace cl_be.Services
 {
     public class CartService : ICartService
     {

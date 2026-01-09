@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace cl_be.Controllers
+namespace cl_be.Controllers.Admin
 {
     [Authorize]
     [Route("api/admin/orders")]

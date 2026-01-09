@@ -1,9 +1,7 @@
-﻿using cl_be.Interfaces.IServices;
-using cl_be.Models;
-using cl_be.Models.Dto.CartDto;
+﻿using cl_be.Models.Dto.CartDto;
+using cl_be.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace cl_be.Controllers
 {

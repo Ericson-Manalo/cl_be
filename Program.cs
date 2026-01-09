@@ -1,12 +1,8 @@
-
-using cl_be.Interfaces.IServices;
 using cl_be.Models;
 using cl_be.Models.Auth;
-using cl_be.Models.Services;
 using cl_be.Services.Implementations;
 using cl_be.Services.Interfaces;
 using cl_be.Services;
-using cl_be.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -24,6 +20,7 @@ namespace cl_be
             // Program.cs - Dependency Injection
 
             builder.Services.AddControllers();
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -37,7 +34,7 @@ namespace cl_be
                     options.JsonSerializerOptions.WriteIndented = true;
                 });
 
-            //autorizzazione cors 
+            // Autorizzazione CORS 
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontEnd", builder =>
@@ -50,6 +47,49 @@ namespace cl_be
                         .AllowCredentials();
                 });
             });
+
+            //========================================
+            // CONNESSIONE AI DATABASE (SSMS/MONGODB)
+            //========================================
+
+            // Connessione al Database "AdventureWorksLt2019"
+            builder.Services.AddDbContext<AdventureWorksLt2019Context>(options =>
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("AdventureWorksLT2019"),
+                    sqlOptions => sqlOptions.UseCompatibilityLevel(110) // <--- AGGIUNGI QUESTA RIGA
+                ));
+
+            // Connessione al Database "ClcredsDb"
+            builder.Services.AddDbContext<ClcredsDbContext>(options =>
+            {
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("CLCredsDb")
+                    ?? throw new InvalidOperationException("Connessione non avvenuta"));
+            });
+
+            // Servizio per connettersi al DB ReviewMDB MONGODB
+            // Ottieni la sezione dal configuration
+            var mongoSection = builder.Configuration.GetSection("ReviewsDB");
+
+            // Controllo compatto, lancia eccezione se la sezione manca
+            var mongoConfig = mongoSection.Get<ReviewMDBConfig>()
+                ?? throw new InvalidOperationException("La sezione ReviewsDB è mancante o non valida in appsettings.json");
+
+            // Controlla che tutti i valori fondamentali siano presenti
+            if (string.IsNullOrEmpty(mongoConfig.ConnectionString) ||
+                string.IsNullOrEmpty(mongoConfig.DatabaseName) ||
+                string.IsNullOrEmpty(mongoConfig.ReviewsCollectionName))
+            {
+                throw new InvalidOperationException("La configurazione di MongoDB è incompleta. Controlla ReviewsDB in appsettings.json");
+            }
+
+            // Registra la configurazione e il servizio
+            builder.Services.Configure<ReviewMDBConfig>(mongoSection);
+            builder.Services.AddSingleton<ReviewService>();
+
+            //==============================================
+            // AUTENTICAZIONE E CONFIGURAZIONE JWT SETTINGS
+            //==============================================
 
             // Servizio per validare il Jwt generato
             JwtSettings jwtSettings = new JwtSettings();
@@ -72,15 +112,7 @@ namespace cl_be
                     };
                 });
 
-            // In Program.cs
-            builder.Services.AddDbContext<AdventureWorksLt2019Context>(options =>
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("AdventureWorksLT2019"),
-                    sqlOptions => sqlOptions.UseCompatibilityLevel(110) // <--- AGGIUNGI QUESTA RIGA
-                ));
-
-            builder.Services.AddScoped<ICartService, CartService>();
-
+            // Autorizazzione tramite policy
             builder.Services.AddAuthorization(opt =>
             {
                 opt.AddPolicy("AdminPolicy", policy =>
@@ -94,52 +126,12 @@ namespace cl_be
                 });
             });
 
-            ////Servizio per connettersi al db AdventureWorksLt2019
-            //builder.Services.AddDbContext<AdventureWorksLt2019Context>(options =>
-            //{
-            //    options.UseSqlServer(
-            //        builder.Configuration.GetConnectionString("AdventureWorksLT2019")
-
-            //        ?? throw new InvalidOperationException("Connessione non avvenuta"))
-            //    ;
-            //});
-
-
-            //Servizio per connettersi al db ClcredsDb
-
-            builder.Services.AddDbContext<ClcredsDbContext>(options =>
-            {
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("CLCredsDb")
-                    ?? throw new InvalidOperationException("Connessione non avvenuta"));
-            });
-
-            //Servizio per connettersi al DB ReviewMDB MONGODB
-            // Ottieni la sezione dal configuration
-            var mongoSection = builder.Configuration.GetSection("ReviewsDB");
-
-            // Controllo compatto, lancia eccezione se la sezione manca
-            var mongoConfig = mongoSection.Get<ReviewMDBConfig>()
-                ?? throw new InvalidOperationException("La sezione ReviewsDB è mancante o non valida in appsettings.json");
-
-            // Controlla che tutti i valori fondamentali siano presenti
-            if (string.IsNullOrEmpty(mongoConfig.ConnectionString) ||
-                string.IsNullOrEmpty(mongoConfig.DatabaseName) ||
-                string.IsNullOrEmpty(mongoConfig.ReviewsCollectionName))
-            {
-                throw new InvalidOperationException("La configurazione di MongoDB è incompleta. Controlla ReviewsDB in appsettings.json");
-            }
-
-            // Registra la configurazione e il servizio
-            builder.Services.Configure<ReviewMDBConfig>(mongoSection);
-            builder.Services.AddSingleton<ReviewService>();
-
+            // Service Layer Pattern
+            builder.Services.AddScoped<ICartService, CartService>();
             builder.Services.AddScoped<ICustomerService, CustomerService>();
             builder.Services.AddScoped<IOrderService, OrderService>();
-
-            // Registra il Servizio AdminProductsService
             builder.Services.AddScoped<IAdminProductService, AdminProductService>();
-
+           
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

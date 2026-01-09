@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.Options;
+﻿using cl_be.Models;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace cl_be.Models.Services
+namespace cl_be.Services
 {
     public class ReviewService
     {

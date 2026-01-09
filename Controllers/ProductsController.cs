@@ -3,11 +3,10 @@ using cl_be.Models.Dto.CategoryDto;
 using cl_be.Models.Dto.ProductDto;
 using cl_be.Models.Dto.ProductDto.Admin;
 using cl_be.Models.Pagination;
-using cl_be.Models.Services;
+using cl_be.Services;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace cl_be.Controllers
 {
