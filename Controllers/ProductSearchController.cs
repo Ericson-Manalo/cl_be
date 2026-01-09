@@ -1,8 +1,6 @@
 ﻿using cl_be.Models;
-using cl_be.Models.Dto.CategoryDto;
 using cl_be.Models.Dto.ProductDto;
 using cl_be.Models.Pagination;
-using cl_be.Models.Services;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
