@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace cl_be.Controllers.Admin
 {
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [Route("api/admin/orders")]
     [ApiController]
     public class AdminOrdersController : ControllerBase
